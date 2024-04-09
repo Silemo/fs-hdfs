@@ -94,6 +94,7 @@ impl HdfsUtil {
         dst_fs: &HdfsFs,
         dst: &str,
     ) -> Result<bool, HdfsErr> {
+        print!("copy function begin");
         let res = unsafe {
             let cstr_src = CString::new(src).unwrap();
             let cstr_dst = CString::new(dst).unwrap();

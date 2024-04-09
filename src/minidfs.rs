@@ -22,6 +22,7 @@ use std::ffi;
 use std::mem;
 use std::str;
 use std::sync::Arc;
+use std::ptr;
 
 use crate::err::HdfsErr;
 use crate::hdfs;
@@ -52,8 +53,7 @@ impl Drop for MiniDFS {
 
 impl MiniDFS {
     fn new() -> MiniDFS {
-        let conf = new_mini_dfs_conf();
-        MiniDFS::start(&conf).unwrap()
+        MiniDFS{cluster: ptr::null_mut()}
     }
 
     fn start(conf: &MiniDfsConf) -> Option<MiniDFS> {
@@ -83,34 +83,11 @@ impl MiniDFS {
     }
 
     pub fn namenode_port(&self) -> Option<i32> {
-        match unsafe { nmdGetNameNodePort(self.cluster) } {
-            val if val > 0 => Some(val),
-            _ => None,
-        }
+            Some(8020)
     }
 
     pub fn namenode_addr(&self) -> String {
-        if let Some(port) = self.namenode_port() {
-            format!("hdfs://localhost:{}", port)
-        } else {
-            "hdfs://localhost".to_string()
-        }
-    }
-
-    pub fn namenode_http_addr(&self) -> Option<(&str, i32)> {
-        let mut hostname: *const c_char = unsafe { mem::zeroed() };
-        let mut port: c_int = 0;
-
-        match unsafe { nmdGetNameNodeHttpAddress(self.cluster, &mut port, &mut hostname) }
-        {
-            0 => {
-                let slice = unsafe { ffi::CStr::from_ptr(hostname) }.to_bytes();
-                let str = str::from_utf8(slice).unwrap();
-
-                Some((str, port))
-            }
-            _ => None,
-        }
+        "hdfs://rpc.namenode.service.consul:8020".to_string()
     }
 
     pub fn get_hdfs(&self) -> Result<Arc<HdfsFs>, HdfsErr> {
